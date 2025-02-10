@@ -16,6 +16,7 @@ export function CryptoContextProvider({children}) {
     function mapAssets(assets, result) {
         return assets.map((asset) => {
             const coin = result.find((c) => c.id === asset.id)
+            console.log(coin)
             return {
                 grow: asset.price < coin.price,//boolean
                 growPercent: percentDifference(asset.price, coin.price),
@@ -42,7 +43,28 @@ export function CryptoContextProvider({children}) {
     }, [])
 
     function addAsset(newAsset) {
-        setAssets(prevAsset => mapAssets([...prevAsset, newAsset], crypto))
+        setAssets(prevAssets => {
+            // Ищем индекс актива с таким же id
+            const existingAssetIndex = prevAssets.findIndex(asset => asset.id === newAsset.id);
+
+            if (existingAssetIndex !== -1) {
+                // Если актив с таким id найден, обновляем его данные
+                const updatedAssets = [...prevAssets];
+                updatedAssets[existingAssetIndex] = {
+                    ...updatedAssets[existingAssetIndex],
+                    ...newAsset,
+                    grow: updatedAssets[existingAssetIndex].price < newAsset.price,
+                    growPercent: percentDifference(updatedAssets[existingAssetIndex].price, newAsset.price),
+                    totalAmount: updatedAssets[existingAssetIndex].amount * newAsset.price,
+                    totalProfit: updatedAssets[existingAssetIndex].amount * newAsset.price - (updatedAssets[existingAssetIndex].amount * updatedAssets[existingAssetIndex].price),
+                };
+
+                return updatedAssets;
+            } else {
+                // Если актива с таким id нет, добавляем новый
+                return [...prevAssets, newAsset];
+            }
+        });
     }
 
     return (
